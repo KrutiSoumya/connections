@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connections — A Personal Puzzle</title>
+<style>
+  /* ─── TOKENS ─────────────────────────────────── */
+  :root {
+    --c-bg:        #faf9f7;
+    --c-surface:   #ffffff;
+    --c-border:    #e0ddd6;
+    --c-text:      #1a1a1a;
+    --c-muted:     #6b6460;
+    --c-tile:      #efede8;
+    --c-tile-sel:  #3d3734;
+    --c-tile-txt:  #1a1a1a;
+    --c-tile-stxt: #ffffff;
+
+    /* Category colors — NYT palette + extras */
+    --c-y:    #f9df6d;  /* yellow  */
+    --c-g:    #a0c35a;  /* green   */
+    --c-b:    #b0c4ef;  /* blue    */
+    --c-p:    #ba81c5;  /* purple  */
+    --c-pink: #f4a7c3;  /* pink    */
+    --c-brown:#b89070;  /* brown   */
+    --c-red:  #d65b4f;  /* red — Ferrari */
+    --c-orange:#f0a868; /* orange — Bharatnatyam */
+
+    --radius: 6px;
+    --radius-lg: 12px;
+    --font: 'Georgia', 'Times New Roman', serif;
+    --font-ui: system-ui, -apple-system, sans-serif;
+    --trans: 0.18s ease;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ─── PAGES ──────────────────────────────────── */
+  .page { display: none; width: 100%; max-width: 600px; padding: 0 16px; }
+  .page.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ─── HEADER ─────────────────────────────────── */
+  .site-header {
+    width: 100%;
+    max-width: 600px;
+    border-bottom: 1px solid var(--c-border);
+    padding: 14px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0;
+    background: var(--c-bg);
+    z-index: 100;
+  }
+  .site-header h1 {
+    font-family: var(--font);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+  }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.2rem; padding: 4px 6px;
+    border-radius: 4px; color: var(--c-muted);
+    transition: color var(--trans), background var(--trans);
+  }
+  .icon-btn:hover { color: var(--c-text); background: var(--c-tile); }
+
+  /* ─── LANDING ────────────────────────────────── */
+  #page-landing {
+    justify-content: center;
+    min-height: 90vh;
+    text-align: center;
+    gap: 0;
+  }
+  .landing-logo {
+    font-family: var(--font);
+    font-size: clamp(2.4rem, 8vw, 3.8rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    margin-bottom: 10px;
+  }
+  .landing-sub {
+    font-size: .9rem;
+    color: var(--c-muted);
+    margin-bottom: 36px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .landing-preview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto 36px;
+  }
+  .lp-tile {
+    height: 48px;
+    border-radius: var(--radius);
+    background: var(--c-tile);
+    animation: lpPop 0.5s ease both;
+  }
+  .lp-tile:nth-child(1)  { animation-delay:.05s } .lp-tile:nth-child(2)  { animation-delay:.10s }
+  .lp-tile:nth-child(3)  { animation-delay:.15s } .lp-tile:nth-child(4)  { animation-delay:.20s }
+  .lp-tile:nth-child(5)  { animation-delay:.25s } .lp-tile:nth-child(6)  { animation-delay:.30s }
+  .lp-tile:nth-child(7)  { animation-delay:.35s } .lp-tile:nth-child(8)  { animation-delay:.40s }
+  .lp-tile:nth-child(9)  { animation-delay:.45s } .lp-tile:nth-child(10) { animation-delay:.50s }
+  .lp-tile:nth-child(11) { animation-delay:.55s } .lp-tile:nth-child(12) { animation-delay:.60s }
+  .lp-tile:nth-child(13) { animation-delay:.65s } .lp-tile:nth-child(14) { animation-delay:.70s }
+  .lp-tile:nth-child(15) { animation-delay:.75s } .lp-tile:nth-child(16) { animation-delay:.80s }
+
+  @keyframes lpPop {
+    from { opacity:0; transform: scale(.7) translateY(10px); }
+    to   { opacity:1; transform: scale(1) translateY(0); }
+  }
+
+  .btn-play {
+    display: inline-block;
+    background: var(--c-text);
+    color: #fff;
+    border: none; cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 14px 48px;
+    border-radius: 999px;
+    transition: background var(--trans), transform var(--trans);
+    margin-bottom: 20px;
+  }
+  .btn-play:hover { background: #333; transform: scale(1.03); }
+
+  .landing-hint {
+    font-size: .8rem;
+    color: var(--c-muted);
+    margin-top: 6px;
+  }
+
+  /* ─── GAME PAGE ──────────────────────────────── */
+  #page-game { padding-top: 12px; gap: 0; }
+
+  .game-instructions {
+    font-size: .85rem;
+    color: var(--c-muted);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  /* Solved rows sit above the grid */
+  #solved-rows { width: 100%; display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+  .solved-row {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    animation: solveSlide .45s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes solveSlide {
+    from { opacity:0; transform:translateY(-18px) scale(.97); }
+    to   { opacity:1; transform:translateY(0)     scale(1);   }
+  }
+  .solved-row-label { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; opacity:.75; }
+  .solved-row-title { font-size: 1rem; font-weight: 700; }
+  .solved-row-words { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; opacity:.85; }
+
+  /* Grid */
+  #tile-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+
+  .tile {
+    aspect-ratio: 1 / .62;
+    background: var(--c-tile);
+    border-radius: var(--radius-lg);
+    border: none; cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: clamp(.6rem, 2.3vw, .78rem);
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--c-tile-txt);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 6px 4px;
+    user-select: none;
+    transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
+    position: relative;
+    overflow: hidden;
+  }
+  .tile:hover:not(.selected):not(.solving) { background: #e2dfd9; transform: translateY(-2px); }
+  .tile.selected {
+    background: var(--c-tile-sel);
+    color: var(--c-tile-stxt);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 14px rgba(0,0,0,.18);
+  }
+  .tile.shake {
+    animation: tileShake .5s ease;
+  }
+  @keyframes tileShake {
+    0%,100%{transform:translateX(0)}
+    15%{transform:translateX(-6px)}
+    30%{transform:translateX(6px)}
+    45%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}
+    75%{transform:translateX(-3px)}
+    90%{transform:translateX(3px)}
+  }
+  .tile.solving {
+    animation: tileSolve .55s cubic-bezier(.34,1.56,.64,1) both;
+    pointer-events: none;
+  }
+  @keyframes tileSolve {
+    0%   { transform: scale(1);    }
+    40%  { transform: scale(1.08); }
+    70%  { transform: scale(.95);  }
+    100% { transform: scale(1);    }
+  }
+  .tile.bounce-out {
+    animation: tileOut .35s ease both;
+  }
+  @keyframes tileOut {
+    to { opacity:0; transform: scale(.6) translateY(-8px); }
+  }
+
+  /* Game controls */
+  .game-controls {
+    display: flex; gap: 8px; align-items: center;
+    flex-wrap: wrap; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .btn-outline {
+    background: none;
+    border: 1.5px solid var(--c-text);
+    color: var(--c-text);
+    font-family: var(--font-ui);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--trans), color var(--trans);
+  }
+  .btn-outline:hover { background: var(--c-text); color: #fff; }
+  .btn-outline:disabled { opacity: .4; cursor: default; }
+  .btn-submit {
+    background: var(--c-text);
+    color: #fff;
+    border: 1.5px solid var(--c-text);
+    font-family: var(--font-ui);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 8px 24px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--trans), transform var(--trans), opacity var(--trans);
+  }
+  .btn-submit:disabled { opacity: .4; cursor: default; transform: none !important; }
+  .btn-submit:not(:disabled):hover { background: #333; transform: scale(1.03); }
+
+  /* Mistakes */
+  .mistakes-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .8rem; color: var(--c-muted);
+    margin-bottom: 16px;
+  }
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--c-text);
+    transition: background .3s;
+  }
+  .dot.used { background: #ccc8c2; }
+
+  /* Toast */
+  #toast {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-14px);
+    background: var(--c-text); color: #fff;
+    font-size: .85rem; font-weight: 600;
+    padding: 10px 22px; border-radius: 999px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    z-index: 999; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ─── RESULTS PAGE ───────────────────────────── */
+  #page-result {
+    min-height: 90vh; justify-content: flex-start;
+    padding-top: 28px; gap: 20px;
+    text-align: center;
+  }
+  .result-heading {
+    font-family: var(--font);
+    font-size: 2rem; font-weight: 700;
+    line-height: 1.15;
+  }
+  .result-sub { font-size: .9rem; color: var(--c-muted); }
+
+  .result-solved-grid {
+    width: 100%; display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .result-emoji-grid { font-size: 1.4rem; letter-spacing: 2px; line-height: 1.8; }
+
+  .result-personal {
+    font-size: .95rem; color: var(--c-muted);
+    border-top: 1px solid var(--c-border);
+    padding-top: 16px; width: 100%;
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .btn-share {
+    background: var(--c-text); color: #fff;
+    border: none; cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: .85rem; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase;
+    padding: 12px 36px; border-radius: 999px;
+    display: flex; align-items: center; gap: 8px;
+    transition: background var(--trans), transform var(--trans);
+  }
+  .btn-share:hover { background: #333; transform: scale(1.03); }
+  .btn-play-again {
+    background: none; border: 1.5px solid var(--c-text); color: var(--c-text);
+    font-family: var(--font-ui); font-size: .78rem; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 9px 24px; border-radius: 999px; cursor: pointer;
+    transition: background var(--trans), color var(--trans);
+  }
+  .btn-play-again:hover { background: var(--c-text); color: #fff; }
+
+  /* ─── CONFETTI ───────────────────────────────── */
+  #confetti-canvas {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 9999;
+  }
+
+  /* ─── COLOR HELPERS ──────────────────────────── */
+  .cat-y     { background: var(--c-y); }
+  .cat-g     { background: var(--c-g); }
+  .cat-b     { background: var(--c-b); }
+  .cat-p     { background: var(--c-p); }
+  .cat-pink  { background: var(--c-pink); }
+  .cat-brown { background: var(--c-brown); }
+  .cat-red   { background: var(--c-red); }
+  .cat-orange{ background: var(--c-orange); }
+
+  /* ─── RESPONSIVE ─────────────────────────────── */
+  @media (max-width: 420px) {
+    .site-header h1 { font-size: 1.1rem; }
+    .tile { font-size: .62rem; }
+    .landing-logo { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────── -->
+<header class="site-header">
+  <h1>Connections</h1>
+  <div class="header-right">
+    <button class="icon-btn" id="btn-music" title="Toggle music">🔇</button>
+    <button class="icon-btn" id="btn-help"  title="How to play">?</button>
+  </div>
+</header>
+
+<!-- ── TOAST ──────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ── CONFETTI CANVAS ────────────────────────────────── -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE 1 — LANDING
+══════════════════════════════════════════════════════ -->
+<div id="page-landing" class="page active">
+  <p class="landing-sub">A Personal Puzzle</p>
+  <h2 class="landing-logo">Connections</h2>
+
+  <div class="landing-preview" id="lp-preview">
+    <!-- 16 dummy tiles filled by JS -->
+  </div>
+
+  <button class="btn-play" id="btn-start">Play</button>
+  <p class="landing-hint">Find groups of four related words.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE 2 — GAME
+══════════════════════════════════════════════════════ -->
+<div id="page-game" class="page">
+  <p class="game-instructions">Select four words that share something in common.</p>
+
+  <div id="solved-rows"></div>
+  <div id="tile-grid"></div>
+
+  <div class="mistakes-row">
+    <span>Mistakes remaining:</span>
+    <div id="dots"></div>
+  </div>
+
+  <div class="game-controls">
+    <button class="btn-outline" id="btn-shuffle">Shuffle</button>
+    <button class="btn-outline" id="btn-deselect">Deselect All</button>
+    <button class="btn-submit" id="btn-submit" disabled>Submit</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE 3 — RESULTS
+══════════════════════════════════════════════════════ -->
+<div id="page-result" class="page">
+  <p class="result-sub" id="result-tagline"></p>
+  <h2 class="result-heading" id="result-heading"></h2>
+
+  <div class="result-solved-grid" id="result-solved-grid"></div>
+
+  <div class="result-emoji-grid" id="result-emoji"></div>
+
+  <button class="btn-share" id="btn-share">
+    <span>Share</span><span>🔗</span>
+  </button>
+
+  <p class="result-personal" id="result-personal"></p>
+
+  <button class="btn-play-again" id="btn-play-again">Play Again</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   DATA
+   NOTE: order below is the official difficulty order
+   (easiest → hardest), exactly like NYT Connections:
+   yellow → green → blue → purple → pink → brown.
+   Solved rows are always displayed in this fixed order,
+   regardless of the order in which they were solved.
+══════════════════════════════════════════════════════ */
+const CATEGORIES = [
+  {
+    id: "y",
+    color: "cat-y",
+    emoji: "🟨",
+    label: "Popular TV Academics",
+    title: "Popular TV Academics",
+    words: ["SHELDON", "TED", "ALEX", "ROSS"]
+  },
+  {
+    id: "g",
+    color: "cat-g",
+    emoji: "🟩",
+    label: "RCB",
+    title: "RCB",
+    words: ["17", "LION CREST", "P1 ANNEXE", "NOTHING"]
+  },
+  {
+    id: "b",
+    color: "cat-b",
+    emoji: "🟦",
+    label: "Birds",
+    title: "Birds",
+    words: ["ROBIN", "JAY", "PHOEBE", "MARTIN"]
+  },
+  {
+    id: "p",
+    color: "cat-p",
+    emoji: "🟪",
+    label: "Reality Shows",
+    title: "Reality Shows",
+    words: ["ORACLE", "MYSTERY BOX", "BOMBSHELL", "MISCHIEF"]
+  },
+  {
+    id: "pk",
+    color: "cat-pink",
+    emoji: "🩷",
+    label: "Alvin References",
+    title: "Alvin References",
+    words: ["BALAYYA", "SLEEVELESS", "CHIPMUNKS", "MOSQUITOS"]
+  },
+  {
+    id: "t",
+    color: "cat-brown",
+    emoji: "🟫",
+    label: "Neola Nicknames",
+    title: "Neola Nicknames",
+    words: ["BABY", "EGO", "FISH", "KEETH"]
+  },
+  {
+    id: "o",
+    color: "cat-orange",
+    emoji: "🟧",
+    label: "Bharatnatyam",
+    title: "Bharatnatyam",
+    words: ["ARANGETRAM", "SALANGAI", "ARAIMANDI", "ABHINAYA"]
+  },
+  {
+    id: "r",
+    color: "cat-red",
+    emoji: "🟥",
+    label: "Ferrari",
+    title: "Ferrari",
+    words: ["TIFOSI", "KIMI", "PRANCING HORSE", "MARANELLO"]
+  }
+];
+
+const PERSONAL_MESSAGES = {
+  perfect: "Clean sweep — you know this one too well. 😏",
+  great:   "One little stumble, but you got there. Almost perfect!",
+  good:    "Solid performance. The bonus was sneaky, wasn't it?",
+  ok:      "Hey, you finished! That's what counts. 🎉",
+  failed:  "Don't worry — the RCB category trips everyone up. Try again?"
+};
+
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+let state = {
+  tiles: [],          // {word, catId, solved}
+  selected: [],
+  solved: [],          // catIds solved (insertion order tracked, but display uses CATEGORIES order)
+  mistakes: 0,
+  maxMistakes: 4,
+  guessHistory: [],    // array of emoji-row strings per guess
+  triedCombos: [],     // array of sorted-word combo keys already submitted (prevents duplicate guesses)
+  musicOn: false,
+  gameOver: false
+};
+
+const MAX_MISTAKES = 4;
+
+/* ══════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════ */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getCat(id) { return CATEGORIES.find(c => c.id === id); }
+
+// Returns the solved catIds ordered by official difficulty order
+// (yellow → brown), matching real NYT Connections display behavior.
+function solvedInDisplayOrder() {
+  return CATEGORIES.filter(c => state.solved.includes(c.id));
+}
+
+function comboKey(words) {
+  return [...words].sort().join("|");
+}
+
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), duration);
+}
+
+/* ══════════════════════════════════════════════════════
+   PAGES
+══════════════════════════════════════════════════════ */
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById("page-" + id).classList.add("active");
+}
+
+/* ══════════════════════════════════════════════════════
+   LANDING
+══════════════════════════════════════════════════════ */
+function initLanding() {
+  const preview = document.getElementById("lp-preview");
+  preview.innerHTML = "";
+  const all = CATEGORIES.flatMap(c => c.words);
+  shuffle(all).slice(0, 16).forEach(() => {
+    const d = document.createElement("div");
+    d.className = "lp-tile";
+    preview.appendChild(d);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   GAME INIT
+══════════════════════════════════════════════════════ */
+function initGame() {
+  // Build tile list
+  state.tiles = [];
+  state.selected = [];
+  state.solved = [];
+  state.mistakes = 0;
+  state.guessHistory = [];
+  state.triedCombos = [];
+  state.gameOver = false;
+
+  CATEGORIES.forEach(cat => {
+    cat.words.forEach(w => state.tiles.push({ word: w, catId: cat.id, solved: false }));
+  });
+  state.tiles = shuffle(state.tiles);
+
+  renderMistakes();
+  renderGrid();
+  document.getElementById("solved-rows").innerHTML = "";
+  showPage("game");
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER GRID
+══════════════════════════════════════════════════════ */
+function renderGrid() {
+  const grid = document.getElementById("tile-grid");
+  grid.innerHTML = "";
+  const unsolved = state.tiles.filter(t => !t.solved);
+  unsolved.forEach(tile => {
+    const btn = document.createElement("button");
+    btn.className = "tile" + (state.selected.includes(tile.word) ? " selected" : "");
+    btn.textContent = tile.word;
+    btn.dataset.word = tile.word;
+    btn.addEventListener("click", () => onTileClick(tile.word));
+    grid.appendChild(btn);
+  });
+  updateSubmitBtn();
+}
+
+function updateSubmitBtn() {
+  document.getElementById("btn-submit").disabled = state.selected.length !== 4;
+}
+
+/* ══════════════════════════════════════════════════════
+   TILE INTERACTION
+══════════════════════════════════════════════════════ */
+function onTileClick(word) {
+  if (state.gameOver) return;
+  if (state.selected.includes(word)) {
+    state.selected = state.selected.filter(w => w !== word);
+  } else {
+    if (state.selected.length >= 4) return;
+    state.selected.push(word);
+  }
+  renderGrid();
+}
+
+/* ══════════════════════════════════════════════════════
+   SUBMIT
+══════════════════════════════════════════════════════ */
+async function onSubmit() {
+  if (state.selected.length !== 4 || state.gameOver) return;
+
+  const sel = state.selected;
+  const key = comboKey(sel);
+
+  // NYT Connections disallows submitting the exact same 4-word combo twice.
+  if (state.triedCombos.includes(key)) {
+    showToast("Already guessed!");
+    return;
+  }
+  state.triedCombos.push(key);
+
+  // Find matching category
+  let matchCat = null;
+  for (const cat of CATEGORIES) {
+    if (sel.every(w => cat.words.includes(w))) {
+      matchCat = cat;
+      break;
+    }
+  }
+
+  // Build emoji row for history (in fixed difficulty order, like the real game)
+  const emojiRow = CATEGORIES.map(cat => {
+    const hit = sel.filter(w => cat.words.includes(w)).length;
+    return cat.emoji.repeat(hit);
+  }).join("");
+  state.guessHistory.push(emojiRow);
+
+  if (matchCat) {
+    // Animate solving tiles
+    const grid = document.getElementById("tile-grid");
+    sel.forEach(word => {
+      const btn = grid.querySelector(`[data-word="${word}"]`);
+      if (btn) btn.classList.add("solving");
+    });
+
+    await sleep(420);
+
+    // Mark solved
+    sel.forEach(word => {
+      const tile = state.tiles.find(t => t.word === word);
+      if (tile) tile.solved = true;
+    });
+    state.solved.push(matchCat.id);
+    state.selected = [];
+
+    // Re-render solved rows in fixed difficulty order (yellow → brown),
+    // exactly like the real NYT Connections board.
+    renderSolvedRows();
+    renderGrid();
+    saveState();
+
+    // Check win
+    const allSolved = state.tiles.every(t => t.solved);
+    if (allSolved) {
+      await sleep(600);
+      triggerWin();
+    }
+  } else {
+    // Wrong — check "one away"
+    let bestCount = 0;
+    for (const cat of CATEGORIES) {
+      const count = sel.filter(w => cat.words.includes(w)).length;
+      if (count > bestCount) { bestCount = count; }
+    }
+
+    // Shake
+    const grid = document.getElementById("tile-grid");
+    sel.forEach(word => {
+      const btn = grid.querySelector(`[data-word="${word}"]`);
+      if (btn) { btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake"); }
+    });
+
+    if (bestCount === 3) {
+      showToast("One away…");
+    }
+
+    state.mistakes++;
+    renderMistakes();
+    state.selected = [];
+    renderGrid();
+    saveState();
+
+    if (state.mistakes >= MAX_MISTAKES) {
+      await sleep(600);
+      triggerLoss();
+    }
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ══════════════════════════════════════════════════════
+   SOLVED ROWS
+   Always rendered in fixed difficulty order (yellow → brown),
+   matching real Connections behavior — not the order solved.
+══════════════════════════════════════════════════════ */
+function renderSolvedRows() {
+  const container = document.getElementById("solved-rows");
+  container.innerHTML = "";
+  solvedInDisplayOrder().forEach(cat => {
+    const words = state.tiles.filter(t => t.catId === cat.id && t.solved).map(t => t.word);
+    const row = document.createElement("div");
+    row.className = `solved-row ${cat.color}`;
+
+    const lbl = document.createElement("div");
+    lbl.className = "solved-row-label";
+    lbl.textContent = cat.title;
+
+    const wds = document.createElement("div");
+    wds.className = "solved-row-words";
+    wds.textContent = words.join(", ");
+
+    row.appendChild(lbl);
+    row.appendChild(wds);
+    container.appendChild(row);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   MISTAKES
+══════════════════════════════════════════════════════ */
+function renderMistakes() {
+  const dots = document.getElementById("dots");
+  dots.innerHTML = "";
+  for (let i = 0; i < MAX_MISTAKES; i++) {
+    const d = document.createElement("div");
+    d.className = "dot" + (i < state.mistakes ? " used" : "");
+    dots.appendChild(d);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   WIN / LOSS
+══════════════════════════════════════════════════════ */
+function triggerWin() {
+  state.gameOver = true;
+  clearSave();
+  launchConfetti();
+  showResults(true);
+}
+
+function triggerLoss() {
+  state.gameOver = true;
+  // Reveal all unsolved categories
+  const unsolved = CATEGORIES.filter(c => !state.solved.includes(c.id));
+  unsolved.forEach(cat => {
+    const words = state.tiles.filter(t => t.catId === cat.id && !t.solved).map(t => t.word);
+    words.forEach(w => { const tile = state.tiles.find(t => t.word === w); if (tile) tile.solved = true; });
+    state.solved.push(cat.id);
+  });
+  state.selected = [];
+  renderSolvedRows();
+  renderGrid();
+  clearSave();
+  setTimeout(() => showResults(false), 900);
+}
+
+/* ══════════════════════════════════════════════════════
+   RESULTS PAGE
+══════════════════════════════════════════════════════ */
+function showResults(won) {
+  // Heading
+  const heading = document.getElementById("result-heading");
+  const tagline = document.getElementById("result-tagline");
+  if (won && state.mistakes === 0) {
+    heading.textContent = "Perfect!";
+    tagline.textContent = "Flawless victory";
+  } else if (won) {
+    heading.textContent = "You solved it!";
+    tagline.textContent = `With ${state.mistakes} mistake${state.mistakes !== 1 ? "s" : ""}`;
+  } else {
+    heading.textContent = "Better luck next time";
+    tagline.textContent = "The puzzle got you this time!";
+  }
+
+  // Solved grid (always shown in fixed difficulty order)
+  const sg = document.getElementById("result-solved-grid");
+  sg.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    const row = document.createElement("div");
+    row.className = `solved-row ${cat.color}`;
+    row.innerHTML = `<div class="solved-row-label">${cat.title}</div>
+                     <div class="solved-row-words">${cat.words.join(" · ")}</div>`;
+    sg.appendChild(row);
+  });
+
+  // Emoji history
+  const emojiDiv = document.getElementById("result-emoji");
+  emojiDiv.innerHTML = state.guessHistory.map(row => `<div>${row}</div>`).join("");
+
+  // Personal message
+  const pm = document.getElementById("result-personal");
+  if (!won) pm.textContent = PERSONAL_MESSAGES.failed;
+  else if (state.mistakes === 0) pm.textContent = PERSONAL_MESSAGES.perfect;
+  else if (state.mistakes === 1) pm.textContent = PERSONAL_MESSAGES.great;
+  else if (state.mistakes <= 2)  pm.textContent = PERSONAL_MESSAGES.good;
+  else pm.textContent = PERSONAL_MESSAGES.ok;
+
+  showPage("result");
+}
+
+/* ══════════════════════════════════════════════════════
+   SHARE
+══════════════════════════════════════════════════════ */
+function onShare() {
+  const wrong = state.mistakes;
+  const lines = [
+    `Connections — A Personal Puzzle`,
+    `Solved in ${state.guessHistory.length} guess${state.guessHistory.length !== 1 ? "es" : ""} (${wrong} mistake${wrong !== 1 ? "s" : ""})`,
+    "",
+    ...state.guessHistory
+  ].join("\n");
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(lines).then(() => showToast("Copied to clipboard!"));
+  } else {
+    showToast("Share: " + lines.split("\n")[2]);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════════════════════ */
+function launchConfetti() {
+  const canvas = document.getElementById("confetti-canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ["#f9df6d","#a0c35a","#b0c4ef","#ba81c5","#f4a7c3","#b89070"];
+  const particles = Array.from({length: 140}, () => ({
+    x: Math.random() * canvas.width,
+    y: -20 - Math.random() * 80,
+    r: 4 + Math.random() * 7,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    speed: 2.5 + Math.random() * 3.5,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - .5) * .18,
+    drift: (Math.random() - .5) * 1.5,
+    shape: Math.random() > .5 ? "rect" : "circle"
+  }));
+
+  let frame;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      if (p.shape === "rect") ctx.fillRect(-p.r, -p.r/2, p.r*2, p.r);
+      else { ctx.beginPath(); ctx.arc(0, 0, p.r/2, 0, Math.PI*2); ctx.fill(); }
+      ctx.restore();
+      p.y += p.speed;
+      p.x += p.drift;
+      p.angle += p.spin;
+    });
+    if (particles.some(p => p.y < canvas.height + 30)) {
+      frame = requestAnimationFrame(draw);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  cancelAnimationFrame(frame);
+  draw();
+  setTimeout(() => { cancelAnimationFrame(frame); ctx.clearRect(0,0,canvas.width,canvas.height); }, 4500);
+}
+
+/* ══════════════════════════════════════════════════════
+   IN-MEMORY SAVE (save/resume) — kept entirely in JS state,
+   no browser storage APIs are used since this runs as an artifact.
+══════════════════════════════════════════════════════ */
+let memorySave = null;
+function saveState() {
+  if (state.gameOver) return;
+  memorySave = {
+    tiles: JSON.parse(JSON.stringify(state.tiles)),
+    solved: [...state.solved],
+    mistakes: state.mistakes,
+    guessHistory: [...state.guessHistory],
+    triedCombos: [...state.triedCombos],
+    gameOver: state.gameOver
+  };
+}
+
+function loadState() {
+  if (!memorySave || memorySave.gameOver) return false;
+  Object.assign(state, JSON.parse(JSON.stringify(memorySave)));
+  state.selected = [];
+  return true;
+}
+
+function clearSave() {
+  memorySave = null;
+}
+
+/* ══════════════════════════════════════════════════════
+   MUSIC (Web Audio tone)
+══════════════════════════════════════════════════════ */
+let audioCtx = null;
+function toggleMusic() {
+  state.musicOn = !state.musicOn;
+  document.getElementById("btn-music").textContent = state.musicOn ? "🔊" : "🔇";
+  if (!state.musicOn) return;
+  // Gentle ambient tones
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  playAmbient();
+}
+
+function playAmbient() {
+  if (!state.musicOn || !audioCtx) return;
+  const notes = [261.63, 329.63, 392.00, 493.88, 523.25]; // C4 chord
+  const now = audioCtx.currentTime;
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, now + i * 0.12);
+    gain.gain.linearRampToValueAtTime(0.035, now + i * 0.12 + 0.3);
+    gain.gain.linearRampToValueAtTime(0, now + i * 0.12 + 2.5);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now + i * 0.12);
+    osc.stop(now + i * 0.12 + 2.5);
+  });
+  if (state.musicOn) setTimeout(playAmbient, 5000);
+}
+
+/* ══════════════════════════════════════════════════════
+   HELP MODAL (inline toast)
+══════════════════════════════════════════════════════ */
+function showHelp() {
+  showToast("Find groups of 4 • 4 mistakes allowed • Yellow → Brown = easy → hard", 3500);
+}
+
+/* ══════════════════════════════════════════════════════
+   WIRE UP EVENTS
+══════════════════════════════════════════════════════ */
+document.getElementById("btn-start").addEventListener("click", () => {
+  const resumed = loadState();
+  if (resumed) {
+    renderSolvedRows();
+    renderMistakes();
+    renderGrid();
+    showPage("game");
+  } else {
+    initGame();
+  }
+});
+
+document.getElementById("btn-shuffle").addEventListener("click", () => {
+  const unsolved = state.tiles.filter(t => !t.solved);
+  const shuffled = shuffle(unsolved);
+  // Replace unsolved portion in state.tiles
+  let ui = 0;
+  state.tiles = state.tiles.map(t => t.solved ? t : shuffled[ui++]);
+  renderGrid();
+});
+
+document.getElementById("btn-deselect").addEventListener("click", () => {
+  state.selected = [];
+  renderGrid();
+});
+
+document.getElementById("btn-submit").addEventListener("click", onSubmit);
+
+document.getElementById("btn-share").addEventListener("click", onShare);
+
+document.getElementById("btn-play-again").addEventListener("click", () => {
+  clearSave();
+  initGame();
+});
+
+document.getElementById("btn-music").addEventListener("click", toggleMusic);
+document.getElementById("btn-help").addEventListener("click", showHelp);
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+initLanding();
+</script>
+</body>
+</html>
